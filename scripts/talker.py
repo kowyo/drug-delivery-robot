@@ -9,7 +9,8 @@ def talker():
     rate = rospy.Rate(5)  # 10hz
 
     # Open the default camera (usually camera index 0)
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(4)
+    cap.open(4)
 
     # Check if the camera opened successfully
     if not cap.isOpened():
@@ -21,17 +22,21 @@ def talker():
     while not rospy.is_shutdown():
         # Read a frame from the camera
         ret, frame = cap.read()
+
         if not ret:
             rospy.logerr("Error: Could not read frame.")
             break
+        
+        width = frame.shape[1]
+        left_img = frame[:, :width//2]
 
         # Convert the frame to ROS image message
-        image_msg = bridge.cv2_to_imgmsg(frame, encoding="bgr8")
+        image_msg = bridge.cv2_to_imgmsg(left_img, encoding="bgr8")
 
         # Publish the ROS image message
         pub.publish(image_msg)
-        cv2.imshow("Image from Camera", frame)
-        cv2.waitKey(100)  # Necessary to display the image
+        cv2.imshow("Image from Camera", left_img)
+        cv2.waitKey(1)  # Necessary to display the image
         rate.sleep()
 
     # Release the camera
