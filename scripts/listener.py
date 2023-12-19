@@ -137,6 +137,8 @@ from utils.general import (LOGGER, Profile, check_file, check_img_size, check_im
 from utils.torch_utils import select_device, smart_inference_mode
 
 
+flag_turn_flag = 0 #0需要判断转向，1正在判断，-1已无需判断
+
 @smart_inference_mode()
 def run(
         weights=ROOT / 'yolov5s.pt',  # model path or triton URL
@@ -201,7 +203,7 @@ def run(
 
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
-    seen, windows, dt = 0, [], (Profile(), Profile(), Profile())
+    left_counter,right_counter,seen, windows, dt = 0, 0, 0, [], (Profile(), Profile(), Profile())
     for path, im, im0s, vid_cap, s in dataset:
         with dt[0]:
             im = torch.from_numpy(im).to(model.device)
@@ -266,6 +268,33 @@ def run(
                     confidence = float(conf)
                     confidence_str = f'{confidence:.2f}'
 
+
+                    # 需要打印的变量
+                    #number of centre
+                    #打印最后的seen
+                    # centre
+                    centre_x = (xyxy[0] + xyxy[2]) / 2
+                    centre_y = (xyxy[1] + xyxy[3]) / 2
+                    #height,width
+                    height = xyxy[3] - xyxy[1]
+                    width = xyxy[2] - xyxy[0]
+                    #   判断中心点位置在原图中心线左还是右
+                    if centre_x < 0.5:
+                         flag = -1
+                         left_counter = left_counter + 1
+                    else:
+                         flag = 1
+                         right_counter = right_counter + 1
+                    #判断最高值及对应的中心点
+                    temp_height = height
+                    if temp_height > height:
+                        height = temp_height
+                        heightmax_centre_x = centre_x
+                        heightmax_centre_y = centre_y
+                        #判断最高值对应的中心点位置在原图中心线左还是右
+                        flag_turn = flag
+
+
                     if save_csv:
                         write_to_csv(p.name, label, confidence_str)
 
@@ -295,7 +324,10 @@ def run(
             # Save results (image with detections)
             if save_img:
                 if dataset.mode == 'image':
-                    cv2.imwrite(save_path, im0)
+                    # cv2.imwrite(save_path, im0)
+                    # cv2.imshow("Image from detect.py", im0)
+                    # cv2.waitKey(1)  # Necessary to display the image
+                    print("Image saved to", save_path)
                 else:  # 'video' or 'stream'
                     if vid_path[i] != save_path:  # new video
                         vid_path[i] = save_path
@@ -329,7 +361,7 @@ def run(
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path or triton URL')
-    parser.add_argument('--source', type=str, default='test.jpg', help='file/dir/URL/glob/screen/0(webcam)')
+    parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob/screen/0(webcam)')
     parser.add_argument('--data', type=str, default=ROOT / 'data/coco128.yaml', help='(optional) dataset.yaml path')
     parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
@@ -361,6 +393,8 @@ def parse_opt():
     print_args(vars(opt))
     return opt
 
+#opt = Namespace(agnostic_nms=False, augment=False, classes=None, conf_thres=0.25, data=PosixPath('src/drug_delivery/scripts/data/coco128.yaml'), device='', dnn=False, exist_ok=False, half=False, hide_conf=False, hide_labels=False, imgsz=[640, 640], iou_thres=0.45, line_thickness=3, max_det=1000, name='exp', nosave=False, project=PosixPath('src/drug_delivery/scripts/runs/detect'), save_conf=False, save_crop=False, save_csv=False, save_txt=False, source='test.jpg', update=False, vid_stride=1, view_img=False, visualize=False, weights=PosixPath('src/drug_delivery/scripts/yolov5s.pt'))
+    
 
 def main(opt):
     pred = run(**vars(opt))
@@ -374,12 +408,72 @@ def listener():
 
 
 def callback(data):
-    bridge = CvBridge()
-    cv_image = bridge.imgmsg_to_cv2(data, "bgr8")
-    cv2.imwrite('test.jpg', cv_image)
     opt = parse_opt()
+    bridge = CvBridge()
+    img = bridge.imgmsg_to_cv2(data, "bgr8")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    opt.source = img
     pred = main(opt)
-    return pred
+
+    # #假设已有需要参数
+    # a = 0.2 #偏移权重,需要调整
+    # turn_threshold_height = 1 #转向高度阈值,需要调整
+
+    # number_of_centre = 0
+    # flag_turn = 0 #判断左右转
+    # height = 0 #最高值
+    # flag_exec_turn = 0 #执行转向
+    # goal_pos = 0 #目标位置
+
+    # while True:
+    #     #判断左右转
+    #     if number_of_centre <= 3:
+    #     # //最近的即最高的
+    #     # //找到（最近的）最高的边框中心点，判断在左或在右
+    #         if(flag_turn_flag == 0): 
+    #             flag_turn_flag = 1 #需要转向
+    #         if(flag_turn_flag == 1): 
+    #             flag_turn_flag = -1 #无需转向
+
+
+    #     # //判断执行左右转
+    #     if flag_turn_flag ==1 and height >= turn_threshold_height:
+    #         flag_exec_turn = 1
+    
+    
+    #     #//直行
+    #     if flag == 0:
+    #         vel_msg.linear.x = 0.05
+    #         vel_msg.linear.y = vel_msg.linear.x * a * goal_pos
+    #         vel_msg.angular.z = 1
+    #         vel_pub.publish(vel_msg)
+        
+    #     #执行左转
+    #     elif flag_turn == -1 and flag_exec_turn == 1:
+    #         vel_msg.linear.x = 0.05
+    #         vel_msg.linear.y = 0
+    #         vel_msg.angular.z = 1
+    #         vel_pub.publish(vel_msg)
+    #         #执行1s
+    #         flag_turn = 0   #或者放在while函数第一行,如果没运行过去，就添加一个flag_turn_flag
+    
+    #     #//执行右转
+    #     elif flag_turn == 1 and flag_exec_turn == 1:
+    #         vel_msg.linear.x = 0.05
+    #         vel_msg.linear.y = 0
+    #         vel_msg.angular.z = 1
+    #         vel_pub.publish(vel_msg)
+    #         #//执行1s
+    #         flag_turn = 0
+    
+
+    #     # 目标范围内桶数量小于1，执行停止
+
+
     
 if __name__ == '__main__':
     listener()
+    # pub = rospy.Publisher('vel_msg' , geometry_msgs , queue_size=10)
+    # rospy.init_node('vel_sub', anonymous=True)
+    # rate = rospy.Rate(10)
+    
