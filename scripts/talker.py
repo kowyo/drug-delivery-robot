@@ -5,8 +5,8 @@ from cv_bridge import CvBridge
 
 def talker():
     pub = rospy.Publisher('chatter', Image, queue_size=10)
-    rospy.init_node('talker', anonymous=True)
-    rate = rospy.Rate(10)  # 10hz
+    rospy.init_node('img_publisher', anonymous=True)
+    rate = rospy.Rate(5)  # 10hz
 
     # Open the default camera (usually camera index 0)
     cap = cv2.VideoCapture(0)
@@ -27,11 +27,11 @@ def talker():
 
         # Convert the frame to ROS image message
         image_msg = bridge.cv2_to_imgmsg(frame, encoding="bgr8")
-        original_image_msg = bridge.imgmsg_to_cv2(image_msg, "bgr8")
+
         # Publish the ROS image message
         pub.publish(image_msg)
         cv2.imshow("Image from Camera", frame)
-        cv2.waitKey(1)  # Necessary to display the image
+        cv2.waitKey(100)  # Necessary to display the image
         rate.sleep()
 
     # Release the camera
