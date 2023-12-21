@@ -1,12 +1,13 @@
 import rospy
 import cv2
 import torch
+import numpy as np
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
-import numpy as np
 
 model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+# model = torch.hub.load('ultralytics/yolov5', 'custom', path='path/to/best.pt') 
 vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 turn_happen_flag = False
 turn_start_flag = False

@@ -44,7 +44,9 @@ You can install YOLOv5 by running the following the instructions in the [YOLOv5 
 If you are using a custom model, you need to modify the 'listener.py' file to load your model.
 
 ```python
-model = torch.hub.load('ultralytics/yolov5', 'custom', path_or_model='path/to/your/model.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='path/to/best.pt') # local model
+# or
+model = torch.hub.load('path/to/yolov5', 'custom', path='path/to/best.pt', source='local')  # local repo
 ```
 
 #### OpenCV
