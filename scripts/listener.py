@@ -7,15 +7,14 @@ from cv_bridge import CvBridge
 import numpy as np
 
 model = torch.hub.load('yolov5', 'custom', path='best.pt', source='local') # local model
-vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10) # local model
+vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 turn_happen_flag = False
 turn_start_flag = False
 turn_end_flag = False
 nurse_start_flag = False
 direction = 'straight'
-turn_counter = 0 
+turn_counter = 0
 
-# model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
 def move(direction, target, nurse_state):
     global vel_pub
     vel_msg = Twist()
@@ -41,7 +40,7 @@ def move(direction, target, nurse_state):
             vel_msg.angular.z = -0.4
             print("I am going right")
     elif target == 'nurse':
-        forward_flag = 0 #前后方向判断
+        forward_flag = 0 # 1: forward, -1: backward, 0: stop
         if nurse_state[1] == 'forward':
             forward_flag = 1
         elif nurse_state[1] == 'backword':
@@ -64,7 +63,7 @@ def move(direction, target, nurse_state):
 
     vel_pub.publish(vel_msg)
     
-    print(f"I have published a velocity message:")
+    print(f"I have published detection_threshold velocity message:")
     print(f"linear.x: {vel_msg.linear.x}")
     print(f"linear.y: {vel_msg.linear.y}")
     print(f"angular.z: {vel_msg.angular.z}")
@@ -73,13 +72,12 @@ def callback(data):
     global turn_happen_flag, vel_pub, direction, turn_start_flag, turn_end_flag , turn_counter, nurse_start_flag
     target = 'stop'
     follow_nurse = ['stop','stop']
-    # Convert the ROS Image message to OpenCV format
     bridge = CvBridge()
-    img = bridge.imgmsg_to_cv2(data, "rgb8")
+    img = bridge.imgmsg_to_cv2(data, "rgb8") # Convert the ROS Image message to OpenCV format
     height_orgin = img.shape[0]
     width_orgin = img.shape[1]
 
-    results = model(img)  # inference
+    results = model(img) # inference
     cones = results.pandas().xyxy[0]
 
     # Confidence
@@ -88,7 +86,7 @@ def callback(data):
 
     if len(cones) > 0:
         target = 'cone'
-         # Get the center of detected cones
+        # Get the center of detected cones
         for i in range(len(cones)):
             cones['center_x'] = (cones['xmin'] + cones['xmax']) / 2
             cones['center_y'] = (cones['ymin'] + cones['ymax']) / 2
@@ -123,12 +121,12 @@ def callback(data):
 
     # å∂nurse
     else:
-        a = 0.05 # 面积阈值权重
-        b = 0.05 # 追踪护士距离的阈值
-        c = 0.05 # 追踪护士的正负误差
+        detection_threshold = 0.05 # Activation threshold of the nurse detection
+        track_threshold = 0.05 # Tracking threshold of the nurse
+        track_error = 0.05 # Tracking error allowed
         k = 0.1 * width_orgin # Center of the image
-        area_threshold = a * height_orgin * width_orgin
-        area_track_threshold = b * height_orgin * width_orgin
+        area_threshold = detection_threshold * height_orgin * width_orgin
+        area_track_threshold = track_threshold * height_orgin * width_orgin
 
         hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
 
@@ -138,15 +136,11 @@ def callback(data):
 
         edges = cv2.Canny(mask, 50, 150)
 
-        # 膨胀核的大小，可以根据需要调整
         dilate_kernel_size = 3
         dilate_kernel = np.ones((dilate_kernel_size, dilate_kernel_size), np.uint8)
+        dilated_edges = cv2.dilate(edges, dilate_kernel, iterations=1)
 
-        # 对图像进行膨胀
-        edges = cv2.dilate(edges, dilate_kernel, iterations=1)
-
-        
-        contours, hierarchy = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv2.findContours(dilated_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         img = cv2.drawContours(img, contours, -1, (0, 255, 0), 2)
 
         total_area = 0
@@ -161,7 +155,7 @@ def callback(data):
             print(f"duty ratio: {total_area / (height_orgin * width_orgin)}")
             if total_area >= area_threshold and not nurse_start_flag:
                 nurse_start_flag = True
-                print("I have found a nurse")
+                print("I have found detection_threshold nurse")
 
         if nurse_start_flag:
             target = 'nurse'
@@ -180,14 +174,13 @@ def callback(data):
                 follow_nurse[0] = 'straight'
 
             # Control the speed of the car
-            if total_area > area_track_threshold * (1 + c):
+            if total_area > area_track_threshold * (1 + track_error):
                 follow_nurse[1] = 'backword'
-            elif total_area < area_track_threshold * (1 - c):
+            elif total_area < area_track_threshold * (1 - track_error):
                 follow_nurse[1] = 'forward'
             else:
                 follow_nurse[1] = 'stop'
 
-    # Publish velocity message
     if turn_start_flag:
         move(direction, target, follow_nurse)
 
@@ -204,7 +197,8 @@ def callback(data):
     else:
         move(direction, target, follow_nurse)
 
-    print(f"target: {target}, direction: {direction}, nurse_state: {follow_nurse}")
+    print(f"target: {target}, direction: {direction}")
+    print(f"I will follow nurse in {follow_nurse[0]} and {follow_nurse[1]}")
 
     cv2.imshow("Detection", img)
     cv2.waitKey(1)
