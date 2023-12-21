@@ -41,6 +41,12 @@ It is recommended to have a basic understanding of ROS Topics. The following tut
 
 You can install YOLOv5 by running the following the instructions in the [YOLOv5 repository](https://github.com/ultralytics/yolov5)
 
+If you are using a custom model, you need to modify the 'listener.py' file to load your model.
+
+```python
+model = torch.hub.load('ultralytics/yolov5', 'custom', path_or_model='path/to/your/model.pt')
+```
+
 #### OpenCV
 
 To use OpenCV in ROS, you need to refer to [this tutorial](https://index.ros.org/p/cv_bridge/) to install OpenCV.

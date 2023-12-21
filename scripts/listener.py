@@ -6,7 +6,7 @@ from geometry_msgs.msg import Twist
 from cv_bridge import CvBridge
 import numpy as np
 
-model = torch.hub.load('yolov5', 'custom', path='best.pt', source='local') # local model
+model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 turn_happen_flag = False
 turn_start_flag = False

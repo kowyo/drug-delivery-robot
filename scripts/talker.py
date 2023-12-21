@@ -8,9 +8,9 @@ def talker():
     rospy.init_node('img_publisher', anonymous=True)
     rate = rospy.Rate(5)  # 10hz
 
-    # Open the default camera (usually camera index 0)
-    cap = cv2.VideoCapture(4)
-    cap.open(4)
+    # Open the camera
+    cap = cv2.VideoCapture(0)
+    cap.open(0)
 
     # Check if the camera opened successfully
     if not cap.isOpened():
