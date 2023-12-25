@@ -1,4 +1,4 @@
-# Drug Delivery Bot
+# Drug Delivery Robot
 
 ## Introduction
 
@@ -32,7 +32,7 @@ It is recommended to have a basic understanding of ROS Topics. The following tut
 ### Dependencies
 
 > [!NOTE]  
-> A virtual environment is not recommended for ROS as it is hard for `rosrun` to find the packages in the virtual environment. All python packages should be installed globally using `pip install`. If you cannot find pip, you can install it by running:
+> A virtual environment is not recommended for ROS as it does not officially support this feature. All python packages should be installed globally using `pip install`. If you cannot find pip, you can install it by running:
 > ```zsh
 > sudo apt install python3-pip
 > ```
@@ -102,10 +102,9 @@ https://github.com/xiln7/drug_delivery_bot/assets/110339237/c0b99b8b-1e8a-487d-a
 If you use this repository in your research, please cite our work as follows:
 
 ```bibtex
-@software{drug_delivery_bot,
-  title = {Drug Delivery Bot},
+@software{Drug Delivery Robot,
+  title = {Drug Delivery Root},
   author = {Zifeng Huang, Shunyu Zhou},
-  license = {MIT},
   year = {2023},
   url = {https://github.com/xiln7/drug_delivery_bot}
 }
