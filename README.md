@@ -70,7 +70,7 @@ cd ~/catkin_ws/src # Go to your catkin workspace
 catkin_create_pkg your_package_name # Create a new package
 cd your_package_name # Go to your new package
 rm rf * # Remove all files in the package
-git clone https://github.com/xiln7/drug_delivery_bot
+git clone https://github.com/xiln7/drug-delivery-robot
 cd ~/catkin_ws # Go back to your catkin workspace
 catkin_make # Build the package
 ```
@@ -95,7 +95,7 @@ rosrun your_package_name listener.py
 
 ## Demo
 
-https://github.com/xiln7/drug_delivery_bot/assets/110339237/c0b99b8b-1e8a-487d-aca7-a1e24230e809
+https://github.com/xiln7/drug-delivery-robot/assets/110339237/08d9dec9-e8ea-40df-8b31-26e9ff2e7a95
 
 ## Citation
 
@@ -106,7 +106,7 @@ If you use this repository in your research, please cite our work as follows:
   title = {Drug Delivery Root},
   author = {Zifeng Huang, Shunyu Zhou},
   year = {2023},
-  url = {https://github.com/xiln7/drug_delivery_bot}
+  url = {https://github.com/xiln7/drug-delivery-robot}
 }
 ```
 
